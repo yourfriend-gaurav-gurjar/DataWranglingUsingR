@@ -3,10 +3,10 @@
 ###########################################################################################################################################
 library(readr)
 library(readxl)
-# bd_df <- read_csv("/media/gurjar/Gaurav-HDD/Practice-R/Jeremy McClane/board_data_sample.csv", na = c("", "NA", "UNKNOWN"))
-bd_df <- read_csv("/media/gurjar/Gaurav-HDD/Practice-R/Jeremy McClane/board_data_sample.csv")
-# ceo_df <-read_xlsx("/media/gurjar/Gaurav-HDD/Practice-R/Jeremy McClane/Equilar All Company CEO Data for U Wisconsin on 8.17.2018.xlsx", na = c("", "NA", "UNKNOWN"))
-ceo_df <-read_xlsx("/media/gurjar/Gaurav-HDD/Practice-R/Jeremy McClane/Equilar All Company CEO Data for U Wisconsin on 8.17.2018.xlsx")
+# bd_df <- read_csv("/media/gurjar/Gaurav-HDD/board_data_sample.csv", na = c("", "NA", "UNKNOWN"))
+bd_df <- read_csv("/media/gurjar/Gaurav-HDD/board_data_sample.csv")
+# ceo_df <-read_xlsx("/media/gurjar/Gaurav-HDD/CEOs.xlsx", na = c("", "NA", "UNKNOWN"))
+ceo_df <-read_xlsx("/media/gurjar/Gaurav-HDD/CEO.xlsx")
 ###########################################################################################################################################
 # Pulling the sample data out of Loaded datasets
 ###########################################################################################################################################
