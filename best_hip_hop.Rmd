@@ -1,0 +1,218 @@
+---
+title: "Best Hip Hop songs on BBC"
+author: "Gaurav Gurjar"
+date: "4/18/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+# Loading the packages
+```{r}
+library(tidyverse)
+library(tidytuesdayR)
+library(spotifyr)
+```
+Let's build a model for [the best hip hop songs of all time from this week's
+#tidytuesday dataset]()
+```{r}
+tuesdata <- tidytuesdayR::tt_load('2020-04-14')
+polls <- tuesdata$polls
+rankings <- tuesdata$rankings
+
+```
+
+```{r}
+rankings %>%
+  ggplot(aes(year, points, color = gender)) + 
+  geom_jitter(alpha = 0.7) +
+  scale_y_log10()
+rankings
+polls
+```
+## Get audio features
+Spotify makes a [set of "audio features"available](https://developer.spotify.com/documentation/web-api/reference/tracks/)
+
+```{r}
+Sys.setenv(SPOTIFY_CLIENT_ID = "6af62d02720648389a1ab40ed635debc")
+Sys.setenv(SPOTIFY_CLIENT_SECRET = "e87162f1742d4d2488320b410abd9570")
+access_token <- get_spotify_access_token()
+
+## tmock1923 / 7esD007S7kzeSwVtcH9GFe
+playlist_features <- get_playlist_audio_features("tmock1923", 
+                                                 "7esD007S7kzeSwVtcH9GFe")
+```
+
+```{r}
+pull_id <- function(query) {
+  search_spotify(query, "track") %>%
+    arrange(-popularity) %>%
+    filter(row_number() == 1) %>%
+    pull(id)
+}
+
+rankings_ids <- rankings %>%
+  mutate(search_query = paste(title, artist),
+         search_query = str_to_lower(search_query),
+         search_query = str_remove(search_query, "ft.*$")) %>%
+  mutate(id = map_chr(search_query, possibly(pull_id, NA_character_)))
+        
+```
+
+`r scales::percent(mean(is.na(rankings_ids$id)))`
+```{r}
+# Sum of number of songs with absolutely no NA values in id
+sum(!is.na(rankings_ids$id))
+```
+
+```{r}
+rankings_features <- rankings_ids %>% 
+  mutate(id_group = row_number() %/% 80) %>%
+  select(id_group, id) %>%
+  nest(data = c(id)) %>%
+  mutate(audio_features = map(data, ~get_track_audio_features(.$id)))
+```
+
+
+```{r}
+ranking_df <- rankings_ids %>%
+  bind_cols(rankings_features %>% select(audio_features) %>% 
+              unnest(audio_features)) %>%
+              select(title, artist, points, year, danceability:tempo) %>%
+  na.omit()
+```
+
+```{r}
+library(corrr)
+ranking_df %>%
+  select(year:tempo) %>%
+  correlate() %>%
+  rearrange() %>%
+  shave() %>%
+  rplot() +
+  theme_dark()
+```
+
+```{r}
+ranking_lm <- ranking_df %>%
+  select(-title, -artist) %>%
+  lm(log(points) ~., data = .)
+summary(ranking_lm)
+```
+
+## Principal component analysis
+
+```{r}
+library(tidymodels)
+ranking_rec <- recipe(points ~ ., data = ranking_df) %>%
+  update_role(title, artist, new_role = "id") %>%
+  step_log(points) %>%
+  step_normalize(all_predictors()) %>%
+  step_pca(all_predictors())
+
+ranking_prep <- prep(ranking_rec)
+ranking_prep
+```
+
+```{r}
+tidied_pca <- tidy(ranking_prep, 3)
+
+tidied_pca %>%
+  mutate(component = fct_inorder(component)) %>%
+  ggplot(aes(value, terms, fill = terms)) +
+  geom_col(show.legend = FALSE) +
+  facet_wrap(~component) +
+  labs(y = NULL)
+```
+
+```{r}
+library(tidytext)
+
+tidied_pca %>%
+filter(component %in% c("PC1", "PC2", "PC3", "PC4")) %>%
+group_by(component) %>%
+top_n(6, abs(value)) %>%
+ungroup() %>%
+mutate(terms = reorder_within(terms, abs(value), component)) %>%  
+ggplot(aes(abs(value), terms, fill = value > 0)) +
+geom_col() +
+facet_wrap(~component, scales = "free_y") +
+scale_y_reordered() +
+labs(x = "Absolute value of contribution", y = NULL,
+     fill = "Positive?")  
+```
+
+
+```{r}
+juice(ranking_prep) %>%
+  ggplot(aes(PC1, PC3, label = title)) + 
+  geom_point(alpha = 0.2) +
+  geom_text(check_overlap = TRUE)
+```
+
+```{r}
+sdev <- ranking_prep$steps[[3]]$res$sdev
+percent_variation <- sdev^2 / sum(sdev^2)
+
+tibble(component = unique(tidied_pca$component),
+       percent_var = percent_variation) %>%
+  mutate(component = fct_inorder(component)) %>%
+  ggplot(aes(component, percent_var)) +
+  geom_col() + 
+  scale_y_continuous(labels = scales::percent_format())
+```
+
+```{r}
+pca_lm <- juice(ranking_prep) %>%
+  select(-title, -artist) %>%
+  lm(points ~., data = .)
+summary(pca_lm)
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
