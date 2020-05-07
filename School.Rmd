@@ -1,0 +1,33 @@
+---
+title: "SchoolQualityReport"
+author: "Gaurav Gurjar"
+date: "5/7/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+##
+```{r}
+library(rvest)
+library(stringr)
+library(tidyverse)
+```
+
+```{r}
+path <- "https://infohub.nyced.org/reports/school-quality/school-quality-reports-and-resources/school-quality-report-citywide-data"
+```
+
+```{r}
+school_reports <- read_html(path) %>%
+  html_nodes("div.rte-content") %>%
+  html_nodes("h2") %>%
+  html_text() %>%
+  as.data.frame() %>%
+  filter(str_detect(.,"2018-19")) %>%
+  ungroup()
+  
+  
+```
