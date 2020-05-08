@@ -1,0 +1,68 @@
+---
+title: "Broadway shows"
+author: "Gaurav Gurjar"
+date: "5/6/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(scales)
+library(tidymetrics)
+
+theme_set(theme_light())
+tidytuesdayR::tt_load("2020-04-28")
+tuesdata <- tidytuesdayR::tt_load('2020-04-28')
+tuesdata
+grosses <- tuesdata$grosses
+grosses %>%
+  filter(show %in% c("Hamilton", "The Lion King")) %>%
+  ggplot(aes(week_ending, avg_ticket_price, color = show)) +
+  geom_line() +
+  scale_y_continuous(labels = scales::dollar) +
+  expand_limits(y = 0)
+```
+
+```{r}
+lion_king_summarized <- grosses %>%
+  filter(show == "The Lion King") %>%
+  rename(date = week_ending) %>%
+  cross_by_periods(c("month", "quarter", "year")) %>%
+  summarize(usd_gross = sum(weekly_gross),
+            avg_ticket_price = mean(avg_ticket_price)) 
+
+lion_king_summarized %>%
+  ggplot(aes(date, usd_gross, color = period)) +
+  geom_line() 
+
+lion_king_summarized %>%
+  ggplot(aes(date, avg_ticket_price, color = period)) +
+  geom_line(size = 1, alpha = .5) +
+  expand_limits(y = 0) +
+  scale_y_continuous(labels = dollar_format()) +
+  labs(x = "Time",
+       y = "Average ticket price",
+       color = "Period")
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
