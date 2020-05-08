@@ -1,0 +1,31 @@
+---
+title: "Covid19-Today-stat"
+author: "Gaurav Gurjar"
+date: "5/7/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(pdftools)
+library(tidyverse)
+remotes::install_github(c("ropensci/tabulizerjars", "ropensci/tabulizer"))
+library(tabulizer)
+```
+
+```{r}
+
+f <- extract_tables("/home/gurjar/Downloads/263 CASES 07.05.20 8 PM (1).pdf", method = "data.frame", guess = TRUE, pages = 1)
+f_v <- extract_areas("/home/gurjar/Downloads/263 CASES 07.05.20 8 PM (1).pdf", method = "data.frame", guess = TRUE, pages = 1)
+f_v
+```
+
+```{r}
+t1 <- cbind(f[[1]][2:16,2:4]) %>% as.data.frame()
+t
+data.frame(matrix(unlist(f), nrow = 263, ncol = 4), stringsAsFactors = FALSE) %>%
+  View()
+```
